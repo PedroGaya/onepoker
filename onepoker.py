@@ -5,11 +5,8 @@ from classes.board import Board
 from classes.enums import DeckTypes, GameState
 from classes.enums import GameResult
 
-from strategies.random import play_strategy as play_random_strategy
-from strategies.random import bet_strategy as bet_random_strategy
-
-from strategies.human import play_strategy as play_human_strategy
-from strategies.human import bet_strategy as bet_human_strategy
+from strategies.human import strategy as human_strategy
+from strategies.random import strategy as random_strategy
 
 import numpy as np
 import numpy.random as rd
@@ -24,8 +21,14 @@ def play_game(points=12, ante=1, deck_type=DeckTypes.PERFECT):
 
     board = Board(points, ante)
 
-    p1 = Player(play_random_strategy, bet_random_strategy, points, order=0)
-    p2 = Player(play_random_strategy, bet_random_strategy, points, order=1)
+    val = rd.randint(0, 2)
+
+    p1 = Player(human_strategy, points, order=val)
+    p2 = Player(random_strategy, points, order=(1-val))
+
+    if(p1.strategy.name == 'HUMAN'):
+        f_or_s = 'first.\nYou are P1.' if p1.order == 0 else 'second\nYou are P2.'
+        print(f'You are going: {f_or_s}')
 
     p1.to_hand(rd.choice(deck))
     p2.to_hand(rd.choice(deck))
@@ -62,16 +65,15 @@ def play_round(p1: Player, p2: Player, board: Board):
     board.p1_hand = p1.hand_state()
     board.p2_hand = p2.hand_state()
 
-    p1.bet(board, ante=True)
-    p2.bet(board, ante=True)
-    
     arr = [p1, p2]
-
     first = next(p for p in arr if p.order == 0)
     second = next(p for p in arr if p.order == 1)
 
     print(f'Going first: P{first.id}')
     print(f'Going second: P{second.id}')
+
+    first.bet(board, ante=True)
+    second.bet(board, ante=True)
 
     card_first = first.play(board)
     card_second = second.play(board)
@@ -91,8 +93,8 @@ def play_round(p1: Player, p2: Player, board: Board):
         second.points += board.bets[second.id - 1]
 
     board.bets = [0, 0]
-    print('Player 1 points after round: ', p1.points)
-    print('Player 2 points after round: ', p2.points)
+    print('P1 points after round: ', p1.points)
+    print('P2 points after round: ', p2.points)
     print('ROUND DONE')
     return winner
 

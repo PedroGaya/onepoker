@@ -1,13 +1,15 @@
 from math import ceil
-from classes.enums import GameState
+from classes.strategy import Strategy
 import numpy as np
 
-def play_strategy(self, board):
+def play(self, board):
     card = np.random.choice(self.hand)
     return card
 
-def bet_strategy(self, board):
+def bet(self, board):
     amount = ceil(self.points / 2)
     if amount >= self.points:
         amount = self.points
     return amount
+
+strategy = Strategy(play, bet, 'RANDOM')

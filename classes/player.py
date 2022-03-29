@@ -1,12 +1,8 @@
 from classes.enums import HandState
-from classes.board import Board
-from strategies.human import play_strategy
-from strategies.human import bet_strategy
-
+from strategies.random import strategy as random_strategy
 class Player:
-    def __init__(self, play_strategy=play_strategy, bet_strategy=bet_strategy, points=12, order=0):
-        self.play_strategy = play_strategy
-        self.bet_strategy = bet_strategy
+    def __init__(self, strategy, points=12, order=0):
+        self.strategy = strategy
         self.hand = []
         self.points = points
         self.order = order
@@ -17,12 +13,12 @@ class Player:
             self.hand.append(card)
 
     def play(self, board):
-        decision = self.play_strategy(self, board)
+        decision = self.strategy.play(self, board)
         self.hand.remove(decision)
         return decision
 
     def bet(self, board, ante=False):
-        decision = self.bet_strategy(self, board) if not ante else board.ante
+        decision = self.strategy.bet(self, board) if not ante else board.ante
 
         self.points -= decision
         board.bets[self.id - 1] += decision

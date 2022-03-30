@@ -145,3 +145,4 @@ def betting_round(first, second, board):
     
 
 play_game()
+input('Press anything to close this window.')

@@ -18,3 +18,10 @@ class GameState(Enum):
 class DeckTypes(Enum):
     PERFECT = 0
     MANGA = 1
+
+class BetActions(Enum):
+    BET = 0
+    CHECK = 1
+    CALL = 2
+    RAISE = 3
+    FOLD = 4

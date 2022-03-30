@@ -23,11 +23,11 @@ def play_game(points=12, ante=1, deck_type=DeckTypes.PERFECT):
 
     val = rd.randint(0, 2)
 
-    p1 = Player(human_strategy, points, order=val)
-    p2 = Player(random_strategy, points, order=(1-val))
+    p1 = Player(human_strategy, points, order=val, id=1)
+    p2 = Player(random_strategy, points, order=(1-val), id=2)
 
     if(p1.strategy.name == 'HUMAN'):
-        f_or_s = 'first.\nYou are P1.' if p1.order == 0 else 'second\nYou are P2.'
+        f_or_s = 'first.\nYou are P1.' if p1.order == 0 else 'second\nYou are P1.'
         print(f'You are going: {f_or_s}')
 
     p1.to_hand(rd.choice(deck))
@@ -36,10 +36,14 @@ def play_game(points=12, ante=1, deck_type=DeckTypes.PERFECT):
     p2.to_hand(rd.choice(deck))
 
     print('Ante: ', board.ante)
+    print('Starting points: ', points)
     while game_result == GameResult.NOT_FINISHED:
+        
+        print('P1 points before round:', p1.points)
+        print('P2 points before round:', p2.points)
         round_w = play_round(p1, p2, board)
-
-        print('Round winner :', round_w)
+        print('P1 points after round:', p1.points)
+        print('P2 points after round:', p2.points)
 
         if p1.points == 0:
             game_result = GameResult.P2_WIN
@@ -48,7 +52,7 @@ def play_game(points=12, ante=1, deck_type=DeckTypes.PERFECT):
             game_result = GameResult.P1_WIN
             break
 
-        if round_w != GameResult.P1_WIN:
+        if round_w != 'FIRST':
             p1.order ^= 1
             p2.order ^= 1
 
@@ -78,38 +82,66 @@ def play_round(p1: Player, p2: Player, board: Board):
     card_first = first.play(board)
     card_second = second.play(board)
 
-    first.bet(board)
-    second.bet(board)
+    betting_round(first, second, board)
 
-    print('Pot: ', np.sum(board.bets))
+    if board.folded > -1:
+        if board.folded == 0:
+            card_first = 0
+        if board.folded == 1:
+            card_second = 0
 
     winner = get_winner(card_first, card_second)
-    if winner == GameResult.P1_WIN:
-        first.points += np.sum(board.bets)
-    if winner == GameResult.P2_WIN:
-        second.points += np.sum(board.bets)
-    if winner == GameResult.DRAW:
-        first.points += board.bets[first.id - 1]
-        second.points += board.bets[second.id - 1]
+    payout = [0, 0]
 
+    if winner == 'FIRST':
+        print(first.strategy.name, 'wins')
+        if first.id == 1:
+            payout = [np.sum(board.bets), 0]
+        else:
+            payout = [0, np.sum(board.bets)]
+    elif winner == 'SECOND':
+        if second.id == 1:
+            payout = [np.sum(board.bets), 0]
+        else:
+            payout = [0, np.sum(board.bets)]
+    elif winner == 'DRAW':
+        payout = board.bets
+
+    p1.points += payout[0]
+    p2.points += payout[1]
+
+    board.last_action = None
+    board.folded = -1
     board.bets = [0, 0]
-    print('P1 points after round: ', p1.points)
-    print('P2 points after round: ', p2.points)
+
     print('ROUND DONE')
     return winner
 
 def get_winner(card_first, card_second):
-    print('First card: ', card_first)
-    print('Second card: ', card_second)
+    print('First card: ', card_first if card_first else 'FOLD')
+    print('Second card: ', card_second if card_second else 'FOLD')
     if card_first == card_second:
-        return GameResult.DRAW
+        return 'DRAW'
     if card_first == 2 and card_second == 14:
-        return GameResult.P1_WIN
+        return 'FIRST'
     if card_second == 2 and card_first == 14:
-        return GameResult.P2_WIN
+        return 'SECOND'
     if card_first > card_second:
-        return GameResult.P1_WIN
+        return 'FIRST'
     else:
-        return GameResult.P2_WIN
+        return 'SECOND'
+
+def betting_round(first, second, board):
+    should_continue = True
+    while should_continue:
+        first.bet(board)
+        second.bet(board)
+        print('Pot:', board.bets)
+        call_or_fold = board.last_action == 'CALL' or board.last_action == 'FOLD'
+        no_bets = board.bets[0] == board.bets[1]
+        if no_bets or call_or_fold:
+            should_continue = False
+
+    
 
 play_game()
